@@ -1,0 +1,44 @@
+# --- SEGURIDAD (CRÍTICO) ---
+# Archivos de variables de entorno (Contraseñas de Supabase, API Keys de Gemini)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- DEPENDENCIAS ---
+# Carpetas de librerías (Se regeneran con npm install)
+node_modules/
+jspm_packages/
+
+# --- COMPILACIÓN / BUILD ---
+# Archivos generados al buildear la app de React
+dist/
+build/
+.vercel/
+
+# --- LOGS Y CACHÉ ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+.stylelintcache
+
+# --- CONFIGURACIÓN DEL IDE / SISTEMA ---
+# Archivos específicos de editores (opcional, pero recomendado)
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# --- ANTIGRAVITY / AGENTES ---
+# Si el IDE genera logs de agentes o archivos temporales de ejecución
+.antigravity/
+artifacts/temp/
