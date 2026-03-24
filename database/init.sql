@@ -154,3 +154,45 @@ BEGIN
     RETURN v_movimiento_id;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 6. CU04: Funciones de agregación para el Dashboard
+
+-- Patrimonio total: suma de saldo_o_limite de todos los productos bancarios del usuario
+CREATE OR REPLACE FUNCTION obtener_patrimonio_total()
+RETURNS DECIMAL AS $$
+  SELECT COALESCE(SUM(pb.saldo_o_limite), 0)
+  FROM productos_bancarios pb
+  JOIN cuentas_bancarias cb ON pb.cuenta_bancaria_id = cb.id
+  WHERE cb.usuario_id = auth.uid();
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- Gastos agrupados por categoría del mes actual
+CREATE OR REPLACE FUNCTION obtener_gastos_por_categoria()
+RETURNS TABLE(categoria VARCHAR, total DECIMAL) AS $$
+  SELECT c.nombre AS categoria, COALESCE(SUM(m.monto), 0) AS total
+  FROM movimientos m
+  JOIN categorias c ON m.categoria_id = c.id
+  JOIN productos_bancarios pb ON m.producto_bancario_id = pb.id
+  JOIN cuentas_bancarias cb ON pb.cuenta_bancaria_id = cb.id
+  WHERE cb.usuario_id = auth.uid()
+    AND m.tipo = 'Gasto'
+    AND m.fecha >= date_trunc('month', CURRENT_DATE)
+    AND m.fecha < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+  GROUP BY c.nombre
+  ORDER BY total DESC;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- Cuotas pendientes del usuario
+CREATE OR REPLACE FUNCTION obtener_cuotas_pendientes()
+RETURNS TABLE(descripcion VARCHAR, cuotas_restantes BIGINT, monto_cuota DECIMAL) AS $$
+  SELECT m.descripcion, COUNT(cu.id) AS cuotas_restantes, cu.monto_cuota
+  FROM cuotas cu
+  JOIN movimientos m ON cu.movimiento_id = m.id
+  JOIN productos_bancarios pb ON m.producto_bancario_id = pb.id
+  JOIN cuentas_bancarias cb ON pb.cuenta_bancaria_id = cb.id
+  WHERE cb.usuario_id = auth.uid()
+    AND cu.estado = 'Pendiente'
+  GROUP BY m.descripcion, cu.monto_cuota
+  ORDER BY cuotas_restantes DESC;
+$$ LANGUAGE sql SECURITY DEFINER;
+

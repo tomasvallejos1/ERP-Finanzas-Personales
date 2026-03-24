@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import healthRoutes from './routes/health.routes.js';
 import movimientosRoutes from './routes/movimientos.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
 
 const app = express();
 
@@ -14,5 +15,6 @@ app.use(express.json());
 // Inyección de rutas
 app.use('/api/health', healthRoutes);
 app.use('/api/movimientos', movimientosRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 export default app;
