@@ -10,6 +10,26 @@ Este documento define la estructura estricta de la base de datos relacional.
 
 ```mermaid
 erDiagram
+    USUARIOS ||--o{ CUENTAS_BANCARIAS : "tiene"
+    
+    CUENTAS_BANCARIAS {
+        uuid id PK
+        uuid usuario_id FK
+        varchar banco_nombre "Ej: Galicia, Santander"
+    }
+
+    CUENTAS_BANCARIAS ||--o{ PRODUCTOS_BANCARIOS : "contiene"
+
+    PRODUCTOS_BANCARIOS {
+        uuid id PK
+        uuid cuenta_bancaria_id FK
+        enum tipo_producto "Caja de Ahorro, Tarjeta de Crédito"
+        varchar identificador "CBU o últimos 4 dígitos"
+        decimal saldo_o_limite
+    }
+
+    PRODUCTOS_BANCARIOS ||--o{ MOVIMIENTOS : "registra"
+    
     USUARIOS {
         uuid id PK
         varchar nombre
