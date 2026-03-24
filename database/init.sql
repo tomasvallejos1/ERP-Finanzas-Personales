@@ -116,3 +116,41 @@ CREATE POLICY "Permitir gestión de cuotas propias" ON cuotas
 
 CREATE POLICY "Permitir gestión de activos propios" ON activos_financieros 
     FOR ALL USING (broker_id IN (SELECT id FROM brokers WHERE usuario_id = auth.uid()));
+
+-- 5. Función transaccional para CU02: Registrar Movimiento
+-- Garantiza atomicidad ACID: INSERT movimiento + UPDATE saldo_o_limite
+CREATE OR REPLACE FUNCTION registrar_movimiento(
+    p_producto_bancario_id UUID,
+    p_categoria_id UUID,
+    p_monto DECIMAL(12, 2),
+    p_fecha DATE,
+    p_tipo tipo_movimiento_enum,
+    p_descripcion VARCHAR DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+    v_movimiento_id UUID;
+    v_delta DECIMAL(12, 2);
+BEGIN
+    -- Calcular delta según tipo de movimiento
+    IF p_tipo = 'Ingreso' THEN
+        v_delta := p_monto;
+    ELSIF p_tipo = 'Gasto' THEN
+        v_delta := -p_monto;
+    ELSE -- Transferencia: no altera saldo aquí
+        v_delta := 0;
+    END IF;
+
+    -- 1. Insertar el movimiento
+    INSERT INTO movimientos (producto_bancario_id, categoria_id, monto, fecha, tipo, descripcion)
+    VALUES (p_producto_bancario_id, p_categoria_id, p_monto, p_fecha, p_tipo, p_descripcion)
+    RETURNING id INTO v_movimiento_id;
+
+    -- 2. Actualizar saldo del producto bancario
+    UPDATE productos_bancarios
+    SET saldo_o_limite = saldo_o_limite + v_delta
+    WHERE id = p_producto_bancario_id;
+
+    RETURN v_movimiento_id;
+END;
+$$ LANGUAGE plpgsql;
